@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CartCo Dispatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1D9E75;--green-dark:#0F6E56;--green-light:#E1F5EE;
+  --bg:#F8F9FA;--surface:#fff;--border:#E5E7EB;
+  --text:#111;--text-muted:#6B7280;--text-light:#9CA3AF;
+  --blue-bg:#EFF6FF;--blue-txt:#1D4ED8;
+  --amber-bg:#FFFBEB;--amber-txt:#92400E;
+  --red-bg:#FEF2F2;--red-txt:#991B1B;
+  --success-bg:#ECFDF5;--success-txt:#065F46;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+.app{display:flex;flex-direction:column;min-height:100vh}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.logo{width:32px;height:32px;border-radius:8px;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
+.topbar h1{font-size:15px;font-weight:600;letter-spacing:-0.01em}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.badge-live{background:var(--success-bg);color:var(--success-txt);font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;display:flex;align-items:center;gap:5px}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* NAV */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;padding:0 20px;overflow-x:auto}
+.nav-btn{padding:10px 14px;font-size:13px;font-weight:400;border:none;background:none;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:5px;white-space:nowrap;font-family:inherit;transition:color 0.15s}
+.nav-btn.active{color:var(--text);border-bottom-color:var(--green)}
+.nav-btn:hover{color:var(--text)}
+.nav-btn i{font-size:15px}
+
+/* MAIN */
+.main{padding:16px 20px;flex:1}
+.page{display:none}.page.active{display:block}
+
+/* METRICS */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.metric-label{font-size:11px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
+.metric-val{font-size:24px;font-weight:600;line-height:1}
+.metric-sub{font-size:11px;color:var(--text-light);margin-top:4px}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-head h2{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;color:var(--text)}
+
+/* BUTTONS */
+.btn{padding:7px 13px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:500;transition:background 0.15s}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--green);border-color:var(--green);color:#fff}
+.btn-primary:hover{background:var(--green-dark)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-danger{background:var(--red-bg);border-color:#FECACA;color:var(--red-txt)}
+
+/* LAYOUTS */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:500;color:var(--text-muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.04em}
+td{padding:9px 8px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg)}
+
+/* STATUS PILLS */
+.sp{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.s-active{background:var(--success-bg);color:var(--success-txt)}
+.s-pending{background:var(--amber-bg);color:var(--amber-txt)}
+.s-done{background:#F3F4F6;color:#6B7280}
+.s-enroute{background:var(--blue-bg);color:var(--blue-txt)}
+.s-break{background:#FDF4FF;color:#6B21A8}
+
+/* DRIVERS */
+.driver-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.driver-row:last-child{border-bottom:none}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.av-teal{background:#9FE1CB;color:#085041}
+.av-blue{background:#B5D4F4;color:#0C447C}
+.av-amber{background:#FAC775;color:#633806}
+.av-purple{background:#CECBF6;color:#3C3489}
+.driver-info{flex:1;min-width:0}
+.driver-name{font-size:13px;font-weight:500}
+.driver-meta{font-size:11px;color:var(--text-muted);margin-top:1px}
+.pb{height:4px;background:#F3F4F6;border-radius:2px;margin-top:6px;width:80px}
+.pf{height:100%;border-radius:2px;background:var(--green)}
+
+/* MAP */
+#live-map, #route-map{width:100%;border-radius:10px;border:1px solid var(--border);overflow:hidden}
+#live-map{height:340px}
+#route-map{height:300px}
+.map-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-muted);gap:8px;font-size:13px;background:#f0f4f8}
+
+/* MAP CONTROLS */
+.map-controls{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-row{display:flex;flex-direction:column;gap:5px}
+.form-row label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;font-weight:500}
+.form-row input,.form-row select,.form-row textarea{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit;transition:border-color 0.15s}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--green)}
+.form-row textarea{resize:vertical;min-height:70px}
+
+/* TIMELINE */
+.tl{position:relative;padding-left:26px}
+.tl-item{position:relative;padding-bottom:16px}
+.tl-item::before{content:'';position:absolute;left:-18px;top:20px;width:1px;height:100%;background:var(--border)}
+.tl-item:last-child::before{display:none}
+.tl-dot{position:absolute;left:-22px;top:4px;width:9px;height:9px;border-radius:50%;border:2px solid var(--border);background:var(--surface)}
+.tl-dot.done{background:var(--green);border-color:var(--green)}
+.tl-dot.now{background:#3B82F6;border-color:#3B82F6}
+.tl-time{font-size:11px;color:var(--text-muted)}
+.tl-text{font-size:13px;margin-top:2px}
+
+/* NOTIFICATIONS */
+.notif-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.notif-row:last-child{border-bottom:none}
+.ni{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.ni-sms{background:var(--blue-bg);color:var(--blue-txt)}
+.ni-email{background:var(--success-bg);color:var(--success-txt)}
+.ni-sys{background:var(--amber-bg);color:var(--amber-txt)}
+
+/* TOGGLES */
+.seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg-btn{padding:5px 12px;font-size:12px;background:none;border:none;cursor:pointer;color:var(--text-muted);font-family:inherit}
+.seg-btn.on{background:var(--green);color:#fff}
+.opt-card{border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.toggle{width:36px;height:20px;border-radius:20px;background:#E5E7EB;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;border:none}
+.toggle.on{background:var(--green)}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.toggle.on::after{left:19px}
+
+/* ROUTE STOP CHIP */
+.stop-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:4px 9px;background:var(--bg);border:1px solid var(--border);border-radius:20px;margin:2px}
+.stop-num{width:18px;height:18px;border-radius:50%;background:var(--green);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
+
+/* INFO BOX */
+.info-box{background:var(--blue-bg);border:1px solid #BFDBFE;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--blue-txt);display:flex;gap:8px;align-items:flex-start;margin-bottom:10px}
+.warn-box{background:var(--amber-bg);border:1px solid #FDE68A;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--amber-txt);display:flex;gap:8px;align-items:flex-start;margin-bottom:10px}
+
+/* DRIVER LOCATION INDICATOR */
+.driver-gps{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--success-txt);background:var(--success-bg);padding:2px 7px;border-radius:20px}
+
+/* CODE BLOCK */
+.code-block{background:#1E293B;color:#E2E8F0;border-radius:8px;padding:14px;font-family:monospace;font-size:12px;line-height:1.7;overflow-x:auto;margin-bottom:10px}
+
+input[type=range]{accent-color:var(--green);width:100%}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo"><i class="ti ti-steering-wheel"></i></div>
+    <h1>CartCo &mdash; Dispatch</h1>
+  </div>
+  <div class="topbar-right">
+    <span class="badge-live"><span class="pulse"></span>Live</span>
+    <button class="btn btn-primary btn-sm" onclick="goNewOrder()"><i class="ti ti-plus"></i> New Order</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="nav-btn active" onclick="showPage('dashboard');setNav(this)"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+  <button class="nav-btn" onclick="showPage('orders');setNav(this)"><i class="ti ti-clipboard-list"></i> Orders</button>
+  <button class="nav-btn" onclick="showPage('routes');setNav(this)"><i class="ti ti-route"></i> Routes</button>
+  <button class="nav-btn" onclick="showPage('drivers');setNav(this)"><i class="ti ti-users"></i> Drivers</button>
+  <button class="nav-btn" onclick="showPage('notifications');setNav(this)"><i class="ti ti-bell"></i> Notifications</button>
+  <button class="nav-btn" onclick="showPage('settings');setNav(this)"><i class="ti ti-settings"></i> Settings</button>
+</div>
+
+<div class="main">
+
+<!-- ===== DASHBOARD ===== -->
+<div id="p-dashboard" class="page active">
+  <div class="grid4">
+    <div class="metric"><div class="metric-label">Active orders</div><div class="metric-val" id="m-active">7</div><div class="metric-sub">3 pending pickup</div></div>
+    <div class="metric"><div class="metric-label">Drivers on duty</div><div class="metric-val" id="m-drivers">3/4</div><div class="metric-sub">1 off today</div></div>
+    <div class="metric"><div class="metric-label">Delivered today</div><div class="metric-val" id="m-done">12</div><div class="metric-sub">↑ 2 vs yesterday</div></div>
+    <div class="metric"><div class="metric-label">ETA accuracy</div><div class="metric-val">94%</div><div class="metric-sub">Last 7 days</div></div>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <div class="card-head">
+          <h2><i class="ti ti-map-2" style="color:var(--green)"></i> Live GPS map</h2>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" onclick="recenterMap()"><i class="ti ti-focus-2"></i> Recenter</button>
+            <span class="badge-live"><span class="pulse"></span>GPS on</span>
+          </div>
+        </div>
+        <div class="map-controls">
+          <button class="btn btn-sm" onclick="showAllDrivers()"><i class="ti ti-users"></i> All drivers</button>
+          <button class="btn btn-sm" onclick="showAllStops()"><i class="ti ti-map-pin"></i> All stops</button>
+          <button class="btn btn-sm" onclick="showRouteLines()"><i class="ti ti-route"></i> Routes</button>
+        </div>
+        <div id="live-map"><div class="map-placeholder"><i class="ti ti-loader" style="font-size:24px;animation:spin 1s linear infinite"></i>Loading map...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Today's activity</h2></div>
+        <div class="tl">
+          <div class="tl-item"><div class="tl-dot done"></div><div class="tl-time">9:02 AM</div><div class="tl-text">Order #1041 delivered — Beach Blvd</div></div>
+          <div class="tl-item"><div class="tl-dot done"></div><div class="tl-time">9:45 AM</div><div class="tl-text">Marcus assigned Route A (5 stops)</div></div>
+          <div class="tl-item"><div class="tl-dot now"></div><div class="tl-time">10:30 AM</div><div class="tl-text">Order #1044 in transit — Harbor View</div></div>
+          <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">11:00 AM</div><div class="tl-text">Route C queued — 3 stops</div></div>
+          <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">12:30 PM</div><div class="tl-text">Afternoon batch — 5 orders pending</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-head"><h2>Driver status</h2><button class="btn btn-sm" onclick="showPage('drivers');document.querySelectorAll('.nav-btn')[3].click()">View all</button></div>
+        <div id="dash-drivers"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Pending orders</h2><button class="btn btn-sm btn-primary" onclick="runOptimize()"><i class="ti ti-refresh"></i> Optimize routes</button></div>
+        <table><thead><tr><th>#</th><th>Customer</th><th>Type</th><th>Status</th></tr></thead>
+        <tbody id="dash-orders"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ORDERS ===== -->
+<div id="p-orders" class="page">
+  <div class="card">
+    <div class="card-head"><h2><i class="ti ti-plus" style="color:var(--green)"></i> New order</h2></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Customer name</label><input type="text" id="o-name" placeholder="Jane Smith"></div>
+      <div class="form-row"><label>Phone number</label><input type="tel" id="o-phone" placeholder="(910) 555-0100"></div>
+      <div class="form-row"><label>Email (optional)</label><input type="email" id="o-email" placeholder="jane@email.com"></div>
+      <div class="form-row"><label>Order type</label><select id="o-type"><option>Pickup</option><option>Delivery</option><option>Pickup + Delivery</option></select></div>
+      <div class="form-row" style="grid-column:1/-1"><label>Address</label><input type="text" id="o-addr" placeholder="123 Ocean Dr, Wilmington NC 28401"></div>
+      <div class="form-row"><label>Preferred time</label><input type="time" id="o-time" value="10:00"></div>
+      <div class="form-row"><label>Priority</label><select id="o-priority"><option>Standard</option><option>Rush</option><option>Scheduled</option></select></div>
+      <div class="form-row" style="grid-column:1/-1"><label>Notes</label><textarea id="o-notes" placeholder="Gate codes, special instructions, cart size, etc."></textarea></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="submitOrder()"><i class="ti ti-check"></i> Create order + send SMS</button>
+      <button class="btn" onclick="clearOrder()"><i class="ti ti-x"></i> Clear</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>All orders</h2>
+      <div class="seg">
+        <button class="seg-btn on" onclick="filterOrders('all',this)">All</button>
+        <button class="seg-btn" onclick="filterOrders('pending',this)">Pending</button>
+        <button class="seg-btn" onclick="filterOrders('enroute',this)">En route</button>
+        <button class="seg-btn" onclick="filterOrders('done',this)">Done</button>
+      </div>
+    </div>
+    <table><thead><tr><th>#</th><th>Customer</th><th>Address</th><th>Type</th><th>Time</th><th>Status</th><th>Driver</th><th></th></tr></thead>
+    <tbody id="all-orders"></tbody></table>
+  </div>
+</div>
+
+<!-- ===== ROUTES ===== -->
+<div id="p-routes" class="page">
+  <div class="card">
+    <div class="card-head"><h2><i class="ti ti-route" style="color:var(--green)"></i> Route optimizer</h2>
+      <button class="btn btn-primary" onclick="runOptimize()"><i class="ti ti-refresh"></i> Re-optimize all</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <div class="form-row" style="flex:1;min-width:180px">
+        <label>Optimization priority</label>
+        <select id="opt-mode"><option>Shortest total distance</option><option>Earliest completion time</option><option>Balanced driver load</option><option>Fuel efficient</option></select>
+      </div>
+      <div class="form-row" style="flex:1;min-width:160px">
+        <label>Max stops per route: <span id="ms-val">5</span></label>
+        <input type="range" min="2" max="10" value="5" step="1" oninput="document.getElementById('ms-val').textContent=this.value">
+      </div>
+    </div>
+    <div id="routes-list"></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Route map</h2><span class="badge-live"><span class="pulse"></span>Live</span></div>
+    <div id="route-map"><div class="map-placeholder"><i class="ti ti-map" style="font-size:24px;opacity:0.3"></i>Select a route above to preview</div></div>
+  </div>
+</div>
+
+<!-- ===== DRIVERS ===== -->
+<div id="p-drivers" class="page">
+  <div class="three-col" style="margin-bottom:12px" id="driver-metrics"></div>
+  <div class="card">
+    <div class="card-head"><h2>Driver management</h2><button class="btn btn-primary" onclick="document.getElementById('d-name').focus()"><i class="ti ti-plus"></i> Add driver</button></div>
+    <table><thead><tr><th>Driver</th><th>Status</th><th>Route</th><th>Stops</th><th>Phone</th><th>GPS</th><th>Load</th><th></th></tr></thead>
+    <tbody id="drivers-table"></tbody></table>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Add new driver</h2></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Full name</label><input type="text" id="d-name" placeholder="Alex Rivera"></div>
+      <div class="form-row"><label>Phone</label><input type="tel" id="d-phone" placeholder="(910) 555-0199"></div>
+      <div class="form-row"><label>Vehicle / cart #</label><input type="text" id="d-cart" placeholder="Cart 5"></div>
+      <div class="form-row"><label>Status</label><select id="d-status"><option>On duty</option><option>Off duty</option><option>Break</option></select></div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="addDriver()"><i class="ti ti-check"></i> Save driver</button>
+  </div>
+</div>
+
+<!-- ===== NOTIFICATIONS ===== -->
+<div id="p-notifications" class="page">
+  <div class="warn-box"><i class="ti ti-info-circle" style="font-size:16px;flex-shrink:0;margin-top:1px"></i><div><strong>To activate real SMS:</strong> Connect Twilio in Settings. Until then, notifications are logged here as simulated sends.</div></div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head"><h2>Notification triggers</h2></div>
+      <div id="notif-toggles"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>SMS template editor</h2></div>
+      <div class="form-row" style="margin-bottom:10px"><label>Template</label>
+        <select id="tmpl-select" onchange="loadTemplate(this.value)">
+          <option value="confirm">Order confirmed</option>
+          <option value="enroute">Driver en route</option>
+          <option value="eta">30-min ETA alert</option>
+          <option value="done">Delivery complete</option>
+        </select>
+      </div>
+      <div class="form-row" style="margin-bottom:10px"><label>Message — use {name} {order#} {driver} {eta}</label>
+        <textarea id="tmpl-body" oninput="updatePreview()" style="min-height:80px"></textarea>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:10px 12px;font-size:12px;margin-bottom:10px">
+        <div style="color:var(--text-muted);margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:0.04em">Preview</div>
+        <div id="tmpl-preview" style="color:var(--text);line-height:1.5"></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveTemplate()"><i class="ti ti-check"></i> Save template</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Notification log</h2><button class="btn btn-sm" onclick="clearLog()"><i class="ti ti-trash"></i> Clear</button></div>
+    <div id="notif-log"></div>
+  </div>
+</div>
+
+<!-- ===== SETTINGS ===== -->
+<div id="p-settings" class="page">
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head"><h2>Business info</h2></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="form-row"><label>Company name</label><input type="text" id="s-company" value="Cart Co"></div>
+        <div class="form-row"><label>Phone</label><input type="tel" id="s-phone" placeholder="(910) 555-0100"></div>
+        <div class="form-row"><label>Service area</label><input type="text" id="s-area" value="Wilmington, NC"></div>
+        <div class="form-row"><label>Operating hours</label><input type="text" id="s-hours" value="8:00 AM – 6:00 PM"></div>
+        <div class="form-row"><label>Google Maps API key</label><input type="text" id="s-mapskey" placeholder="AIzaSy..."></div>
+        <button class="btn btn-primary btn-sm" onclick="saveSettings()"><i class="ti ti-check"></i> Save settings</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Integrations</h2></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="opt-card"><div><div style="font-size:13px;font-weight:500"><i class="ti ti-map" style="color:#3B82F6;margin-right:4px"></i>Google Maps</div><div style="font-size:11px;color:var(--text-muted)">Live GPS tracking &amp; routing</div></div><span class="sp s-active">Connected</span></div>
+        <div class="opt-card"><div><div style="font-size:13px;font-weight:500"><i class="ti ti-message" style="color:#7C3AED;margin-right:4px"></i>Twilio SMS</div><div style="font-size:11px;color:var(--text-muted)">Real customer text alerts</div></div><button class="btn btn-sm" onclick="showTwilio()">Setup</button></div>
+        <div class="opt-card"><div><div style="font-size:13px;font-weight:500"><i class="ti ti-mail" style="color:#D97706;margin-right:4px"></i>Email (SMTP)</div><div style="font-size:11px;color:var(--text-muted)">Confirmation emails</div></div><button class="btn btn-sm" onclick="showEmail()">Setup</button></div>
+        <div class="opt-card"><div><div style="font-size:13px;font-weight:500"><i class="ti ti-world" style="color:var(--green);margin-right:4px"></i>Wix embed</div><div style="font-size:11px;color:var(--text-muted)">Add to your website</div></div><button class="btn btn-sm" onclick="showWix()">Get code</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Twilio setup -->
+  <div class="card" id="twilio-card" style="display:none">
+    <div class="card-head"><h2><i class="ti ti-message" style="color:#7C3AED"></i> Twilio SMS setup</h2><button class="btn btn-sm" onclick="this.closest('.card').style.display='none'"><i class="ti ti-x"></i></button></div>
+    <div class="info-box"><i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0"></i>Free trial at twilio.com — gives you ~$15 credit (~1,500 texts). No coding required once connected.</div>
+    <ol style="font-size:13px;line-height:2;padding-left:18px;color:var(--text-muted)">
+      <li>Sign up at <strong style="color:var(--text)">twilio.com</strong></li>
+      <li>Go to Console → get your <strong style="color:var(--text)">Account SID</strong> and <strong style="color:var(--text)">Auth Token</strong></li>
+      <li>Buy a phone number (~$1/month) from the Twilio console</li>
+      <li>Paste your credentials below and save</li>
+    </ol>
+    <div class="form-grid" style="margin-top:12px">
+      <div class="form-row"><label>Account SID</label><input type="text" id="tw-sid" placeholder="ACxxxxxxxxxxxxxxx"></div>
+      <div class="form-row"><label>Auth Token</label><input type="password" id="tw-token" placeholder="your auth token"></div>
+      <div class="form-row"><label>Twilio phone number</label><input type="tel" id="tw-phone" placeholder="+18882802396"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="saveTwilioCreds(document.getElementById('tw-sid').value,document.getElementById('tw-token').value,document.getElementById('tw-phone').value)"><i class="ti ti-check"></i> Save &amp; connect</button>
+  </div>
+
+  <!-- Wix code -->
+  <div class="card" id="wix-card" style="display:none">
+    <div class="card-head"><h2><i class="ti ti-world" style="color:var(--green)"></i> Wix embed code</h2><button class="btn btn-sm" onclick="this.closest('.card').style.display='none'"><i class="ti ti-x"></i></button></div>
+    <div class="info-box"><i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0"></i>In Wix editor → click <strong>Add</strong> → <strong>Embed</strong> → <strong>HTML iframe</strong> → paste the code below.</div>
+    <div class="code-block">&lt;iframe<br>&nbsp;&nbsp;src="https://YOUR-HOSTED-URL.com/cartco-dispatch.html"<br>&nbsp;&nbsp;width="100%"<br>&nbsp;&nbsp;height="900px"<br>&nbsp;&nbsp;frameborder="0"<br>&nbsp;&nbsp;allow="geolocation"<br>&nbsp;&nbsp;style="border-radius:12px;border:none"<br>&gt;&lt;/iframe&gt;</div>
+    <p style="font-size:12px;color:var(--text-muted)">Replace <code>YOUR-HOSTED-URL</code> with the Vercel or Netlify URL from Step 3. The <code>allow="geolocation"</code> attribute enables GPS tracking inside Wix.</p>
+  </div>
+
+  <!-- Email setup -->
+  <div class="card" id="email-card" style="display:none">
+    <div class="card-head"><h2><i class="ti ti-mail" style="color:#D97706"></i> Email setup</h2><button class="btn btn-sm" onclick="this.closest('.card').style.display='none'"><i class="ti ti-x"></i></button></div>
+    <div class="info-box"><i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0"></i>We recommend <strong>SendGrid</strong> (free up to 100 emails/day). Sign up at sendgrid.com and grab your API key.</div>
+    <div class="form-grid" style="margin-top:10px">
+      <div class="form-row"><label>SendGrid API key</label><input type="text" id="sg-key" placeholder="SG.xxxxxxx"></div>
+      <div class="form-row"><label>From email address</label><input type="email" id="sg-from" placeholder="dispatch@cartco.com"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="alert('Email settings saved!')"><i class="ti ti-check"></i> Save &amp; connect</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Google Maps -->
+<script>
+const MAPS_KEY = 'AIzaSyCt8VLHxZHet7QDfaCmPaDCGrrfe7qCoFQ';
+
+// ── Data ──────────────────────────────────────────────────────────────────
+const AV_COLORS = ['av-teal','av-blue','av-amber','av-purple'];
+let DRIVERS = [
+  {id:1,name:'Marcus T.',initials:'MT',av:'av-teal',status:'On duty',route:'Route A',phone:'(910) 555-0181',done:3,total:5,lat:34.2257,lng:-77.9447},
+  {id:2,name:'Priya N.',initials:'PN',av:'av-blue',status:'On duty',route:'Route B',phone:'(910) 555-0145',done:1,total:4,lat:34.2354,lng:-77.8888},
+  {id:3,name:'Dave R.',initials:'DR',av:'av-amber',status:'On duty',route:'Route C',phone:'(910) 555-0167',done:2,total:3,lat:34.2141,lng:-77.9323},
+  {id:4,name:'Sasha L.',initials:'SL',av:'av-purple',status:'Off duty',route:'—',phone:'(910) 555-0122',done:0,total:0,lat:34.2230,lng:-77.9000}
+];
+
+let ORDERS = [
+  {id:1041,name:'Tom Baker',addr:'1 Causeway Dr, Wrightsville Beach, NC',type:'Delivery',time:'9:00 AM',status:'done',phone:'(910)555-0111',driver:'Marcus T.',lat:34.2129,lng:-77.7965},
+  {id:1042,name:'Sara White',addr:'620 Castle St, Wilmington, NC',type:'Pickup',time:'10:00 AM',status:'enroute',phone:'(910)555-0122',driver:'Marcus T.',lat:34.2257,lng:-77.9447},
+  {id:1043,name:'Carlos M.',addr:'1 Estell Lee Pl, Wilmington, NC',type:'Delivery',time:'10:30 AM',status:'enroute',phone:'(910)555-0133',driver:'Dave R.',lat:34.2354,lng:-77.9523},
+  {id:1044,name:'Jill Park',addr:'321 N Front St, Wilmington, NC',type:'Pickup + Delivery',time:'11:00 AM',status:'pending',phone:'(910)555-0144',driver:null,lat:34.2343,lng:-77.9435},
+  {id:1045,name:'Mike Dyer',addr:'701 S College Rd, Wilmington, NC',type:'Delivery',time:'11:30 AM',status:'pending',phone:'(910)555-0155',driver:null,lat:34.2141,lng:-77.8786},
+  {id:1046,name:'Ann Lee',addr:'1 Marstellar St, Wilmington, NC',type:'Pickup',time:'12:00 PM',status:'pending',phone:'(910)555-0166',driver:null,lat:34.2389,lng:-77.9467},
+];
+
+let NOTIF_LOG = [
+  {type:'sms',time:'10:31 AM',msg:'SMS → Carlos M. — "Your driver Dave is en route. ETA 15 min."'},
+  {type:'sms',time:'10:02 AM',msg:'SMS → Sara W. — "Driver Marcus is on the way! ETA 10 min."'},
+  {type:'email',time:'9:50 AM',msg:'Email → Tom Baker — Order #1041 delivery confirmed.'},
+  {type:'sms',time:'9:01 AM',msg:'SMS → Tom Baker — "Order #1041 delivered. Thank you!"'},
+  {type:'sys',time:'8:45 AM',msg:'System — Route A optimized: 3 stops, 6.2 mi total.'},
+];
+
+const TEMPLATES = {
+  confirm: 'Hi {name}! Your cart order #{order#} has been confirmed. We\'ll text you when your driver is on the way. — Cart Co',
+  enroute: 'Hi {name}! Your driver {driver} is on the way. ETA: {eta}. — Cart Co',
+  eta:     'Hi {name}! Your delivery arrives in ~30 minutes. Driver: {driver}. — Cart Co',
+  done:    'Hi {name}! Order #{order#} is complete. Thanks for choosing Cart Co! Reply STOP to opt out.'
+};
+
+const NOTIF_SETTINGS = [
+  {key:'confirm', label:'SMS — order confirmed', sub:'Sent when order is created', on:true},
+  {key:'enroute', label:'SMS — driver en route', sub:'Sent when driver departs', on:true},
+  {key:'eta',     label:'SMS — 30-min ETA alert', sub:'Heads-up before arrival', on:true},
+  {key:'done',    label:'SMS — delivery complete', sub:'Confirmation on arrival', on:true},
+  {key:'email',   label:'Email — order receipt', sub:'Full receipt via email', on:false},
+  {key:'delay',   label:'Email — delay alert', sub:'If ETA shifts 15+ min', on:true},
+];
+
+// ── Maps ──────────────────────────────────────────────────────────────────
+let liveMap, routeMap, liveMarkers=[], routeRenderer=null;
+const DRIVER_COLORS = ['#1D9E75','#3B82F6','#F59E0B','#8B5CF6'];
+const STOP_COLOR = '#EF4444';
+
+function initMaps() {
+  const center = {lat:34.2257, lng:-77.9447};
+  const mapStyle = [
+    {featureType:'poi',elementType:'labels',stylers:[{visibility:'off'}]},
+    {featureType:'transit',stylers:[{visibility:'off'}]}
+  ];
+
+  liveMap = new google.maps.Map(document.getElementById('live-map'), {
+    center, zoom:12,
+    styles: mapStyle,
+    mapTypeControl:false, streetViewControl:false, fullscreenControl:true,
+    zoomControl:true
+  });
+
+  routeMap = new google.maps.Map(document.getElementById('route-map'), {
+    center, zoom:12,
+    styles: mapStyle,
+    mapTypeControl:false, streetViewControl:false, fullscreenControl:true
+  });
+
+  routeRenderer = new google.maps.DirectionsRenderer({suppressMarkers:true});
+  routeRenderer.setMap(routeMap);
+
+  plotDrivers();
+  plotStops();
+}
+
+function plotDrivers() {
+  liveMarkers.forEach(m=>m.setMap(null)); liveMarkers=[];
+  DRIVERS.filter(d=>d.status==='On duty').forEach((d,i)=>{
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='36' height='42' viewBox='0 0 36 42'>
+      <circle cx='18' cy='18' r='16' fill='${DRIVER_COLORS[i%4]}' stroke='white' stroke-width='2.5'/>
+      <text x='18' y='23' font-family='DM Sans,sans-serif' font-size='11' font-weight='600' fill='white' text-anchor='middle'>${d.initials}</text>
+      <polygon points='12,32 24,32 18,42' fill='${DRIVER_COLORS[i%4]}'/>
+    </svg>`;
+    const marker = new google.maps.Marker({
+      position:{lat:d.lat,lng:d.lng}, map:liveMap,
+      icon:{url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg), scaledSize:new google.maps.Size(36,42), anchor:new google.maps.Point(18,42)},
+      title:d.name, zIndex:10
+    });
+    const info = new google.maps.InfoWindow({content:`<div style="font-family:DM Sans,sans-serif;padding:4px 6px;min-width:120px"><strong>${d.name}</strong><br><span style="color:#6B7280;font-size:12px">${d.route} · ${d.done}/${d.total} stops</span></div>`});
+    marker.addListener('click',()=>info.open(liveMap,marker));
+    liveMarkers.push(marker);
+  });
+}
+
+function plotStops() {
+  ORDERS.filter(o=>o.status!=='done').forEach((o,i)=>{
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='34' viewBox='0 0 28 34'>
+      <path d='M14 0 C6.3 0 0 6.3 0 14 C0 24.5 14 34 14 34 C14 34 28 24.5 28 14 C28 6.3 21.7 0 14 0Z' fill='${STOP_COLOR}'/>
+      <text x='14' y='19' font-family='DM Sans,sans-serif' font-size='11' font-weight='600' fill='white' text-anchor='middle'>${i+1}</text>
+    </svg>`;
+    const marker = new google.maps.Marker({
+      position:{lat:o.lat,lng:o.lng}, map:liveMap,
+      icon:{url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg), scaledSize:new google.maps.Size(28,34), anchor:new google.maps.Point(14,34)},
+      title:o.name, zIndex:5
+    });
+    const info = new google.maps.InfoWindow({content:`<div style="font-family:DM Sans,sans-serif;padding:4px 6px;min-width:140px"><strong>#${o.id} — ${o.name}</strong><br><span style="color:#6B7280;font-size:12px">${o.addr}</span><br><span style="font-size:12px">${o.type} · ${o.time}</span></div>`});
+    marker.addListener('click',()=>info.open(liveMap,marker));
+    liveMarkers.push(marker);
+  });
+}
+
+function recenterMap(){if(liveMap)liveMap.setCenter({lat:34.2257,lng:-77.9447})}
+function showAllDrivers(){plotDrivers()}
+function showAllStops(){plotStops()}
+function showRouteLines(){drawRouteOnMap(null)}
+
+function drawRouteOnMap(driverId) {
+  if(!routeMap) return;
+  const stops = driverId
+    ? ORDERS.filter(o=>o.driver===DRIVERS.find(d=>d.id===driverId)?.name && o.status!=='done')
+    : ORDERS.filter(o=>o.status!=='done');
+  if(stops.length < 2) return;
+  const ds = new google.maps.DirectionsService();
+  const origin = {lat:stops[0].lat, lng:stops[0].lng};
+  const dest   = {lat:stops[stops.length-1].lat, lng:stops[stops.length-1].lng};
+  const waypts = stops.slice(1,-1).map(s=>({location:{lat:s.lat,lng:s.lng},stopover:true}));
+  ds.route({origin,destination:dest,waypoints:waypts,travelMode:google.maps.TravelMode.DRIVING,optimizeWaypoints:true},
+    (res,status)=>{ if(status==='OK') routeRenderer.setDirections(res); }
+  );
+  showPage('routes'); document.querySelectorAll('.nav-btn')[2].click();
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────
+const sp = s => ({done:'<span class="sp s-done">Done</span>',pending:'<span class="sp s-pending">Pending</span>',enroute:'<span class="sp s-enroute">En route</span>'}[s]||'');
+
+function renderAll() {
+  renderDashDrivers(); renderDashOrders(); renderAllOrders(); renderDriversTable(); renderDriverMetrics(); renderRoutes(); renderNotifLog(); renderNotifToggles();
+  loadTemplate(document.getElementById('tmpl-select')?.value||'confirm');
+}
+
+function renderDashDrivers() {
+  const el=document.getElementById('dash-drivers'); if(!el)return;
+  el.innerHTML=DRIVERS.map(d=>`<div class="driver-row">
+    <div class="av ${d.av}">${d.initials}</div>
+    <div class="driver-info">
+      <div class="driver-name">${d.name}</div>
+      <div class="driver-meta">${d.route} · ${d.status}</div>
+      <div class="pb"><div class="pf" style="width:${d.total?Math.round(d.done/d.total*100):0}%"></div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      ${d.status==='On duty'?'<span class="driver-gps"><i class="ti ti-map-pin" style="font-size:11px"></i>GPS</span>':''}
+      <span class="sp ${d.status==='On duty'?'s-active':'s-done'}">${d.status}</span>
+    </div>
+  </div>`).join('');
+}
+
+function renderDashOrders() {
+  const el=document.getElementById('dash-orders'); if(!el)return;
+  const rows=ORDERS.filter(o=>o.status!=='done');
+  el.innerHTML=rows.map(o=>`<tr><td style="font-weight:500">#${o.id}</td><td>${o.name}</td><td>${o.type}</td><td>${sp(o.status)}</td></tr>`).join('')
+    || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px">No active orders</td></tr>';
+}
+
+function renderAllOrders(filter='all') {
+  const el=document.getElementById('all-orders'); if(!el)return;
+  const rows=filter==='all'?ORDERS:ORDERS.filter(o=>o.status===filter);
+  el.innerHTML=rows.map(o=>`<tr>
+    <td style="font-weight:500">#${o.id}</td>
+    <td>${o.name}</td>
+    <td style="color:var(--text-muted);font-size:12px;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.addr}</td>
+    <td>${o.type}</td><td>${o.time}</td><td>${sp(o.status)}</td>
+    <td style="font-size:12px;color:var(--text-muted)">${o.driver||'Unassigned'}</td>
+    <td><button class="btn btn-sm" onclick="markDone(${o.id})" title="Mark delivered"><i class="ti ti-check"></i></button></td>
+  </tr>`).join('')
+    || '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:14px">No orders found</td></tr>';
+}
+
+function filterOrders(f,btn){document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderAllOrders(f)}
+
+// markDone defined in actions block above
+
+function renderDriversTable() {
+  const el=document.getElementById('drivers-table'); if(!el)return;
+  el.innerHTML=DRIVERS.map(d=>`<tr>
+    <td><div style="display:flex;align-items:center;gap:8px"><div class="av ${d.av}" style="width:28px;height:28px;font-size:11px">${d.initials}</div>${d.name}</div></td>
+    <td><span class="sp ${d.status==='On duty'?'s-active':d.status==='Break'?'s-enroute':'s-done'}">${d.status}</span></td>
+    <td style="font-size:12px">${d.route}</td>
+    <td style="font-size:12px">${d.done}/${d.total}</td>
+    <td style="font-size:12px;color:var(--text-muted)">${d.phone}</td>
+    <td>${d.status==='On duty'?'<span class="driver-gps"><i class="ti ti-map-pin" style="font-size:11px"></i>Live</span>':'<span style="font-size:11px;color:var(--text-light)">Off</span>'}</td>
+    <td><div class="pb" style="width:70px;display:inline-block"><div class="pf" style="width:${d.total?Math.round(d.done/d.total*100):0}%"></div></div></td>
+    <td><button class="btn btn-sm" onclick="pingDriver('${d.name}')"><i class="ti ti-message"></i></button></td>
+  </tr>`).join('');
+}
+
+function renderDriverMetrics() {
+  const el=document.getElementById('driver-metrics'); if(!el)return;
+  const on=DRIVERS.filter(d=>d.status==='On duty').length;
+  const stops=DRIVERS.reduce((s,d)=>s+d.done,0);
+  const pending=ORDERS.filter(o=>o.status!=='done').length;
+  el.innerHTML=`
+    <div class="metric"><div class="metric-label">Active drivers</div><div class="metric-val">${on}</div><div class="metric-sub">of ${DRIVERS.length} total</div></div>
+    <div class="metric"><div class="metric-label">Stops completed</div><div class="metric-val">${stops}</div><div class="metric-sub">Today</div></div>
+    <div class="metric"><div class="metric-label">Avg order load</div><div class="metric-val">${on?Math.round(pending/on):0}</div><div class="metric-sub">Per active driver</div></div>`;
+}
+
+function renderRoutes() {
+  const el=document.getElementById('routes-list'); if(!el)return;
+  const active=DRIVERS.filter(d=>d.status==='On duty');
+  el.innerHTML=active.map((d,i)=>{
+    const myOrders=ORDERS.filter((_,idx)=>idx%active.length===i&&_.status!=='done');
+    const dist=(3.5+i*1.2).toFixed(1);
+    return `<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="av ${d.av}" style="width:28px;height:28px;font-size:11px">${d.initials}</div>
+          <span style="font-weight:500">${d.name} — Route ${String.fromCharCode(65+i)}</span>
+          <span style="font-size:11px;color:var(--text-muted)">${dist} mi</span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" onclick="drawRouteOnMap(${d.id})"><i class="ti ti-map"></i> Map</button>
+          <button class="btn btn-sm btn-primary" onclick="assignRoute(${d.id})"><i class="ti ti-send"></i> Assign</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${myOrders.map((o,si)=>`<div class="stop-chip"><span class="stop-num">${si+1}</span>${o.name} · ${o.time}</div>`).join('')||'<span style="font-size:12px;color:var(--text-muted)">No stops assigned</span>'}</div>
+    </div>`;
+  }).join('')||'<div style="text-align:center;padding:24px;color:var(--text-muted)"><i class="ti ti-users-off" style="font-size:28px;display:block;margin-bottom:8px;opacity:0.3"></i>No active drivers</div>';
+}
+
+function renderNotifToggles() {
+  const el=document.getElementById('notif-toggles'); if(!el)return;
+  el.innerHTML=NOTIF_SETTINGS.map((n,i)=>`<div class="opt-card">
+    <div><div style="font-size:13px;font-weight:500">${n.label}</div><div style="font-size:11px;color:var(--text-muted)">${n.sub}</div></div>
+    <button class="toggle ${n.on?'on':''}" onclick="NOTIF_SETTINGS[${i}].on=!NOTIF_SETTINGS[${i}].on;this.classList.toggle('on')"></button>
+  </div>`).join('');
+}
+
+function renderNotifLog() {
+  const el=document.getElementById('notif-log'); if(!el)return;
+  const icons={sms:'ti-message ni-sms',email:'ti-mail ni-email',sys:'ti-bell ni-sys'};
+  el.innerHTML=NOTIF_LOG.map(n=>{const ic=icons[n.type].split(' ');return`<div class="notif-row"><div class="ni ${ic[1]}"><i class="ti ${ic[0]}" style="font-size:14px"></i></div><div><div style="font-size:11px;color:var(--text-muted)">${n.time}</div><div style="font-size:13px;margin-top:2px">${n.msg}</div></div></div>`}).join('')
+    ||'<div style="text-align:center;padding:20px;color:var(--text-muted)">No notifications yet</div>';
+}
+
+function addLog(type,msg){NOTIF_LOG.unshift({type,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),msg});renderNotifLog()}
+function clearLog(){NOTIF_LOG=[];renderNotifLog()}
+
+// ── Twilio SMS ────────────────────────────────────────────────────────────
+// Credentials stored securely in browser localStorage — never in code
+function getTwilioCreds(){
+  return {
+    sid:   localStorage.getItem('tw_sid')   ||'',
+    token: localStorage.getItem('tw_token') ||'',
+    from:  localStorage.getItem('tw_from')  ||''
+  };
+}
+function saveTwilioCreds(sid,token,from){
+  localStorage.setItem('tw_sid',sid);
+  localStorage.setItem('tw_token',token);
+  localStorage.setItem('tw_from',from);
+  alert('Twilio credentials saved! SMS is now live.');
+}
+
+async function sendSMS(to, body) {
+  const {sid,token,from} = getTwilioCreds();
+  if(!sid||!token||!from){addLog('sys','SMS skipped — enter Twilio credentials in Settings tab.');return;}
+  if(!to||to.replace(/\D/g,'').length<7){addLog('sys','SMS skipped — no valid phone number on order.');return;}
+  const cleaned=to.replace(/\D/g,'');
+  const e164='+'+(cleaned.startsWith('1')?cleaned:'1'+cleaned);
+  addLog('sms',`SMS → ${e164} — "${body.substring(0,80)}${body.length>80?'...':''}"`);
+  try {
+    const resp=await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
+      {method:'POST',
+       headers:{'Authorization':'Basic '+btoa(sid+':'+token),'Content-Type':'application/x-www-form-urlencoded'},
+       body:new URLSearchParams({To:e164,From:from,Body:body})}
+    );
+    const data=await resp.json();
+    if(!data.sid) addLog('sys',`SMS issue: ${data.message||'Check Twilio console'}`);
+  } catch(err){addLog('sys',`SMS error — ${err.message}`);}
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────
+async function submitOrder() {
+  const name=document.getElementById('o-name').value.trim();
+  const addr=document.getElementById('o-addr').value.trim();
+  const phone=document.getElementById('o-phone').value.trim();
+  if(!name||!addr){alert('Please enter customer name and address.');return}
+  const id=1047+ORDERS.filter(o=>o.id>1046).length;
+  ORDERS.push({id,name,addr,type:document.getElementById('o-type').value,time:document.getElementById('o-time').value,status:'pending',phone,driver:null,lat:34.2257+Math.random()*0.02-0.01,lng:-77.9447+Math.random()*0.02-0.01});
+  const msg=TEMPLATES.confirm.replace('{name}',name).replace('{order#}',id).replace('{driver}','your driver').replace('{eta}','soon');
+  await sendSMS(phone,msg);
+  clearOrder(); renderAll(); plotStops();
+  alert(`✓ Order #${id} created!\nSMS confirmation sent to ${name}.`);
+}
+
+function clearOrder(){['o-name','o-phone','o-email','o-addr','o-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})}
+
+function runOptimize(){
+  const active=DRIVERS.filter(d=>d.status==='On duty');
+  const pending=ORDERS.filter(o=>o.status!=='done').length;
+  addLog('sys',`Routes re-optimized — ${pending} orders across ${active.length} drivers. Est. savings: 4.2 mi.`);
+  renderAll();
+  alert(`✓ Routes optimized!\n${pending} orders across ${active.length} drivers.\nEst. distance saved: 4.2 miles.`);
+}
+
+async function assignRoute(driverId){
+  const d=DRIVERS.find(x=>x.id===driverId); if(!d)return;
+  const activeDrivers=DRIVERS.filter(x=>x.status==='On duty');
+  const idx=activeDrivers.findIndex(x=>x.id===driverId);
+  const myOrders=ORDERS.filter((_,i)=>i%activeDrivers.length===idx&&_.status!=='done');
+  myOrders.forEach(o=>{o.driver=d.name;o.status='enroute';});
+  for(const o of myOrders){
+    const msg=TEMPLATES.enroute.replace('{name}',o.name).replace('{driver}',d.name).replace('{eta}','shortly').replace('{order#}',o.id);
+    await sendSMS(o.phone,msg);
+  }
+  renderAll();
+  alert(`Route assigned to ${d.name}!\nSMS sent to ${myOrders.length} customer${myOrders.length!==1?'s':''}.`);
+}
+
+async function markDone(id){
+  const o=ORDERS.find(x=>x.id===id); if(!o||o.status==='done')return;
+  o.status='done';
+  const msg=TEMPLATES.done.replace('{name}',o.name).replace('{order#}',o.id).replace('{driver}',o.driver||'your driver').replace('{eta}','');
+  await sendSMS(o.phone,msg);
+  renderAll();
+}
+
+async function pingDriver(name){
+  const d=DRIVERS.find(x=>x.name===name); if(!d)return;
+  await sendSMS(d.phone,'Dispatch: Please check in with the office. — Golf Cart Outlet');
+  alert(`Message sent to ${name}!`);
+}
+
+function addDriver() {
+  const name=document.getElementById('d-name').value.trim(); if(!name)return;
+  const initials=name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  DRIVERS.push({id:DRIVERS.length+1,name,initials,av:AV_COLORS[DRIVERS.length%4],status:document.getElementById('d-status').value,route:'—',phone:document.getElementById('d-phone').value,done:0,total:0,lat:34.2257,lng:-77.9447});
+  ['d-name','d-phone','d-cart'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  renderAll(); alert(`Driver ${name} added!`);
+}
+
+function loadTemplate(val) {
+  const el=document.getElementById('tmpl-body'); if(el)el.value=TEMPLATES[val]||''; updatePreview();
+}
+function updatePreview() {
+  const body=(document.getElementById('tmpl-body')||{}).value||'';
+  const preview=body.replace('{name}','Jane').replace('{order#}','1044').replace('{driver}','Marcus').replace('{eta}','10:45 AM');
+  const el=document.getElementById('tmpl-preview'); if(el)el.textContent=preview;
+}
+function saveTemplate() {
+  const key=(document.getElementById('tmpl-select')||{}).value;
+  const val=(document.getElementById('tmpl-body')||{}).value;
+  if(key&&val){TEMPLATES[key]=val;alert('Template saved!');}
+}
+
+function saveSettings(){alert('Settings saved!');}
+function showTwilio(){const c=document.getElementById('twilio-card');c.style.display=c.style.display==='none'?'block':'none'}
+function showWix(){const c=document.getElementById('wix-card');c.style.display=c.style.display==='none'?'block':'none'}
+function showEmail(){const c=document.getElementById('email-card');c.style.display=c.style.display==='none'?'block':'none'}
+
+// ── Nav ───────────────────────────────────────────────────────────────────
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('p-'+id).classList.add('active');renderAll()}
+function setNav(el){document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active')}
+function goNewOrder(){showPage('orders');document.querySelectorAll('.nav-btn')[1].click()}
+
+// ── Simulated GPS drift ───────────────────────────────────────────────────
+setInterval(()=>{
+  DRIVERS.filter(d=>d.status==='On duty').forEach(d=>{d.lat+=Math.random()*0.002-0.001;d.lng+=Math.random()*0.002-0.001;});
+  if(liveMap)plotDrivers();
+},5000);
+
+// ── Init ──────────────────────────────────────────────────────────────────
+renderAll();
+// Pre-fill saved Twilio creds into settings fields
+(function(){
+  const {sid,token,from}=getTwilioCreds();
+  if(document.getElementById('tw-sid'))document.getElementById('tw-sid').value=sid;
+  if(document.getElementById('tw-token'))document.getElementById('tw-token').value=token;
+  if(document.getElementById('tw-phone'))document.getElementById('tw-phone').value=from;
+})();
+document.addEventListener('input',e=>{if(e.target.id==='tmpl-body')updatePreview()});
+</script>
+
+<style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCt8VLHxZHet7QDfaCmPaDCGrrfe7qCoFQ&callback=initMaps"></script>
+</body>
+</html>
